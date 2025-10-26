@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <err.h>
 #include <fcntl.h>
 #include <linux/input.h>
@@ -31,7 +32,7 @@ static void lightup_sequence(uint8_t bits, uint32_t speed)
     uint32_t usleep_inter = (interblink * 1000) / speed;
 
     // Iterate through each bit (Notice the size-safety!)
-    uint8_t divisor = 1 << ((sizeof(bits) * 8) - 1);
+    uint8_t divisor = 1 << ((sizeof(bits) * CHAR_BIT) - 1);
     bool found_msb = false;
     while (divisor > 0)
     {
