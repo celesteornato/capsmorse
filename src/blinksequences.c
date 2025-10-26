@@ -89,6 +89,11 @@ void msg_blink(const char msg[restrict 1], size_t len, size_t nbmsg, bool morse,
         if (morse)
         {
             char tmp = to_print[i];
+            if (tmp == ' ')
+            {
+                usleep(interblink * 5 * 1000);
+                continue;
+            }
             uint8_t c = (tmp >= 'a' && tmp <= 'z')   ? atomorse[tmp - 'a']
                         : (tmp >= 'A' && tmp <= 'Z') ? atomorse[tmp - 'A']
                         : (tmp >= '0' && tmp <= '9') ? atomorse[tmp - '0' + ('z' - 'a' + 1)]
