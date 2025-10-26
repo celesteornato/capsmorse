@@ -1,0 +1,16 @@
+BasedOnStyle: LLVM
+
+AllowShortFunctionsOnASingleLine: Empty
+BraceWrapping:
+  AfterControlStatement: true
+  AfterEnum:       false
+  AfterFunction:   true
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeElse:      true
+  IndentBraces:    false
+BreakBeforeBraces: Custom
+
+UseTab: Never
+IndentWidth: 4
+ColumnLimit: 100
