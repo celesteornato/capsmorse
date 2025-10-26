@@ -1,37 +1,42 @@
-WARNS=\
-    -Wall\
-    -Wextra\
-    -Wpedantic\
-    -Wunused\
-    -Wfloat-equal\
-    -Wundef\
-    -Wshadow\
-    -Wpointer-arith\
-    -Wcast-align\
-    -Wstrict-prototypes\
-    -Wstrict-overflow=5\
-    -Wwrite-strings\
-    -Wcast-qual\
-    -Wswitch-default\
-    -Wswitch-enum\
-    -Wconversion\
-    -Wvla\
-    -Wunreachable-code
+WARNS:=\
+	-Wall\
+	-Wextra\
+	-Wpedantic\
+	-Wunused\
+	-Wfloat-equal\
+	-Wundef\
+	-Wshadow\
+	-Wpointer-arith\
+	-Wcast-align\
+	-Wstrict-prototypes\
+	-Wstrict-overflow=5\
+	-Wwrite-strings\
+	-Wcast-qual\
+	-Wswitch-default\
+	-Wswitch-enum\
+	-Wconversion\
+	-Wvla\
+	-Wunreachable-code
 
-CFLAGS+= \
+CFLAGS+=\
 	--std=gnu23\
 	-O3
 
-SRC=main.c
-OUT=capsmorse.out
+SRC:=$(shell find . -name "*.c")
+HEADERS:=$(shell find . -name "*.h")
+OBJ:=$(SRC:.c=.o)
+OUT:=capsmorse
+CC:=cc
 
 all: $(OUT)
 
-$(OUT): $(SRC)
-	clang $(WARNS) $(CFLAGS) -o $(OUT) $(SRC)
+$(OUT): $(OBJ)
+	clang $(WARNS) $(CFLAGS) -o $(OUT) $(OBJ)
+.c.o:
+	$(CC) $(WARNS) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f main.out 
+	rm -f $(OUT) $(OBJ)
 
 .PHONY: all clean
-.SUFFIXES: .c .o
+.SUFFIXES: .c .o .h

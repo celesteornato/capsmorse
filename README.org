@@ -3,6 +3,6 @@
 aka the worst keylogger ever
 
 * Features
-+ Not actually morse
++ Not actually morse /for the most part/
 + Not actually the key (it's the scancode >:( couldn't be bothered with libinput or whatevs I'm on wayland)
 + It's funne though
