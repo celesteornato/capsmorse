@@ -11,10 +11,11 @@
 static constexpr char caps_path_default[] = "/sys/class/leds/input0::capslock/brightness";
 static constexpr char input_path_default[] = "/dev/input/event0";
 
-static constexpr uint32_t wait_milli = 40;
+static constexpr uint32_t interblink = 50;
 static constexpr uint32_t longpress_speedup = 2;
 
 static constexpr char bit0 = '0';
+static constexpr char bit1 = '1';
 
 /* Our `fd`s are gobal because there is no reasonable way to close them otherwise, as the program
  only exits on error or when receiving a signal.
@@ -27,17 +28,25 @@ static int input_fd = -1;
 /* Main attraction, blinks with the given bit sequence*/
 static void lightup_sequence(uint8_t bits, uint32_t speed)
 {
-    uint32_t usleep_amount = (wait_milli * 1000) / speed;
+    uint32_t usleep_inter = (interblink * 1000) / speed;
 
     // Iterate through each bit (Notice the size-safety!)
     uint8_t divisor = 1 << ((sizeof(bits) * 8) - 1);
+    bool found_msb = false;
     while (divisor > 0)
     {
         char bit = ((bits / divisor) % 2) + '0';
         divisor >>= 1;
 
+        // We skip every leading 0
+        if (!found_msb && bit == '0')
+        {
+            continue;
+        }
+        found_msb = true;
+
         write(caps_fd, &bit, sizeof(bit));
-        usleep(usleep_amount);
+        usleep(usleep_inter);
         write(caps_fd, &bit0, sizeof(bit0));
     }
 }
@@ -74,6 +83,8 @@ int main(int argc, char *argv[])
     // User can provide a alternative paths instead of event0 and capslock::brightness
     const char *input_path = (argc < 2) ? input_path_default : argv[1];
     const char *caps_path = (argc < 3) ? caps_path_default : argv[2];
+    bool allows_any = argc >= 4 && argv[3][0] != '0';
+    bool solid_light = argc >= 5 && argv[4][0] != '0';
 
     // Will be closed in the exit function.
     caps_fd = open(caps_path, O_WRONLY);
@@ -99,12 +110,21 @@ int main(int argc, char *argv[])
         // Value = 0 <=> key is up
         // N.B. EV_KEY also includes some mouse/touchpad motions, so we can still pretty much plug
         // in any input device !
-        if (ev.type != EV_KEY || ev.value == 0)
+        if ((!allows_any && ev.type != EV_KEY) || ev.value == 0)
         {
+            if (solid_light)
+            {
+                write(caps_fd, &bit0, sizeof(bit0));
+            }
             continue;
         }
 
         // Value > 1 means that the key is in a long-held state, in which case we apply the speedup.
+        if (solid_light)
+        {
+            write(caps_fd, &bit1, sizeof(bit1));
+            continue;
+        }
         lightup_sequence((uint8_t)ev.code, ev.value == 1 ? 1 : longpress_speedup);
     }
 }
