@@ -85,7 +85,6 @@ void msg_blink(const char msg[restrict 1], size_t len, size_t nbmsg, bool morse,
 
     for (size_t i = 0; to_print[i] != '\0'; ++i)
     {
-        // Now, we just print the binary representation of the character
         if (morse)
         {
             char tmp = to_print[i];
@@ -97,8 +96,9 @@ void msg_blink(const char msg[restrict 1], size_t len, size_t nbmsg, bool morse,
             uint8_t c = (tmp >= 'a' && tmp <= 'z')   ? atomorse[tmp - 'a']
                         : (tmp >= 'A' && tmp <= 'Z') ? atomorse[tmp - 'A']
                         : (tmp >= '0' && tmp <= '9') ? atomorse[tmp - '0' + ('z' - 'a' + 1)]
-                                                     : (uint8_t)tmp;
+                                                     : '\0';
 
+            // Now, we just print the binary representation of the character
             binary_blink(c, 3, caps_fd);
         }
         else
