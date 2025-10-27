@@ -15,7 +15,7 @@
 #include <time.h>
 #include <unistd.h>
 
-enum { BINARY, SOLID, MSG } blink_mode = SOLID;
+enum { BINARY, SOLID, MSG, CMD } blink_mode = SOLID;
 
 static constexpr char led_path_default[] = "/sys/class/leds/input0::capslock/brightness";
 static constexpr char input_path_default[] = "/dev/input/event0";
@@ -37,8 +37,8 @@ static void print_help(void)
         "\t-b : Blink to the binary sequence matching the scancodes emitted by the input device\n"
         "\t-s : Shine the LED as long as the input device is active\n"
         "\t-m \"STRING1|STRING2\" : Like -b, but matching one of the messages separated by pipes\n"
-        "\t-a : Recognises any input type as a keystroke, not just EV_KEY\n"
-        "\t-M : If paired with -m, use the morse code instead of the binary sequence\n"
+        "\t-c \"CMD\" : Like -b, but matches the output of a command that is called each time\n"
+        "\t-M : If paired with -m|-f, use the morse code instead of the binary sequence\n"
         "\t-L : Change the LED device file (must be using the /sys/class/led/*/brightness format)\n"
         "\t-I : Change the polled input device (must be using the /dev/input/event* format)\n");
 }
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
     bool morse = false;
 
     int opt = '\0';
-    while ((opt = getopt(argc, argv, "hL:I:MAbsm:")) != -1)
+    while ((opt = getopt(argc, argv, "hL:I:MAbsm:c:")) != -1)
     {
         switch (opt)
         {
@@ -110,6 +110,10 @@ int main(int argc, char *argv[])
             blink_mode = MSG;
             msg_string = optarg;
             break;
+        case 'c':
+            blink_mode = CMD;
+            msg_string = optarg;
+            break;
         case ':':
         default:
             exit(EXIT_FAILURE);
@@ -120,7 +124,7 @@ int main(int argc, char *argv[])
     // If we are in message mode, we turn the single string into a contiguous list of strings.
     // we then note said string's length (since we have no other way of knowing we're at the end) to
     // pass it all to the blink function later.
-    if (msg_string != nullptr)
+    if (blink_mode == MSG && msg_string != nullptr)
     {
         msg_size = strlen(msg_string) + 1;
         for (size_t i = 0; i < msg_size; ++i)
@@ -167,6 +171,18 @@ int main(int argc, char *argv[])
             break;
         case MSG:
             msg_blink(msg_string, msg_size, msg_count, morse, caps_fd);
+            break;
+        case CMD:
+            FILE *f = popen(msg_string, "r");
+            char *line = NULL;
+            size_t size = 0;
+            while (getline(&line, &size, f) != -1)
+            {
+                printf("%s\n", line);
+                msg_blink(line, size, 1, morse, caps_fd);
+            }
+            free(line);
+            pclose(f);
             break;
         default:
             break;
