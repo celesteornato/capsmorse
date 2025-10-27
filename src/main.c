@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Failed to read input event\n");
             usleep(1000 * 1000);
         }
-        if (blink_mode != MSG && ev.type != EV_KEY)
+        if (blink_mode != MSG && blink_mode != CMD && ev.type != EV_KEY)
         {
             continue;
         }
