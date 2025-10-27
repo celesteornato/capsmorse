@@ -20,6 +20,10 @@ enum { BINARY, SOLID, MSG, CMD } blink_mode = SOLID;
 static constexpr char led_path_default[] = "/sys/class/leds/input0::capslock/brightness";
 static constexpr char input_path_default[] = "/dev/input/event0";
 
+uint32_t interblink = 200;
+uint32_t intermsg = 6000;
+uint32_t longpress_speedup = 2;
+
 /* Our `fd`s are gobal because there is no reasonable way to close them otherwise, as the program
  only exits on error or when receiving a signal.
 
@@ -40,7 +44,9 @@ static void print_help(void)
         "\t-c \"CMD\" : Like -b, but matches the output of a command that is called each time\n"
         "\t-M : If paired with -m|-f, use the morse code instead of the binary sequence\n"
         "\t-L : Change the LED device file (must be using the /sys/class/led/*/brightness format)\n"
-        "\t-I : Change the polled input device (must be using the /dev/input/event* format)\n");
+        "\t-I : Change the polled input device (must be using the /dev/input/event* format)\n"
+        "\t-d n : Set delay between individual blinks (default: 200ms)\n"
+        "\t-D n : Set delay between message/command calls (default: 6000ms)\n");
 }
 
 /* We shouldn't mark this as noreturn because that's not *actually* guaranteed, we just know it to
@@ -84,7 +90,7 @@ int main(int argc, char *argv[])
     bool morse = false;
 
     int opt = '\0';
-    while ((opt = getopt(argc, argv, "hL:I:MAbsm:c:")) != -1)
+    while ((opt = getopt(argc, argv, "hL:I:MAbsm:c:d:D:")) != -1)
     {
         switch (opt)
         {
@@ -113,6 +119,12 @@ int main(int argc, char *argv[])
         case 'c':
             blink_mode = CMD;
             msg_string = optarg;
+            break;
+        case 'd':
+            interblink = (uint32_t)strtoull(optarg, nullptr, 10);
+            break;
+        case 'D':
+            intermsg = (uint32_t)strtoull(optarg, nullptr, 10);
             break;
         case ':':
         default:
@@ -178,7 +190,6 @@ int main(int argc, char *argv[])
             size_t size = 0;
             while (getline(&line, &size, f) != -1)
             {
-                printf("%s\n", line);
                 msg_blink(line, size, 1, morse, caps_fd);
             }
             free(line);
