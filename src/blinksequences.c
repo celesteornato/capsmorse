@@ -6,12 +6,20 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-constexpr uint8_t atomorse[] = {
-    0b101,    0b11000,  0b1010,   0b1100,   0b10,     0b10010,  0b1110,   0b10000,  0b100,
-    0b10111,  0b1101,   0b10100,  0b111,    0b110,    0b1111,   0b10110,  0b11101,  0b1010,
-    0b1000,   0b11,     0b1001,   0b10001,  0b1011,   0b11001,  0b11011,  0b11100,  0b101111,
-    0b100111, 0b100011, 0b100001, 0b100000, 0b110000, 0b111000, 0b111100, 0b111110, 0b111111,
-};
+static uint8_t atomorse(char c)
+{
+    static constexpr uint8_t morse_lookup[] = {
+        0b101,    0b11000,  0b1010,   0b1100,   0b10,     0b10010,  0b1110,   0b10000,  0b100,
+        0b10111,  0b1101,   0b10100,  0b111,    0b110,    0b1111,   0b10110,  0b11101,  0b1010,
+        0b1000,   0b11,     0b1001,   0b10001,  0b1011,   0b11001,  0b11011,  0b11100,  0b101111,
+        0b100111, 0b100011, 0b100001, 0b100000, 0b110000, 0b111000, 0b111100, 0b111110, 0b111111,
+    };
+
+    return (c >= 'a' && c <= 'z')   ? morse_lookup[c - 'a']
+           : (c >= 'A' && c <= 'Z') ? morse_lookup[c - 'A']
+           : (c >= '0' && c <= '9') ? morse_lookup[c - '0' + ('z' - 'a' + 1)]
+                                    : '\0';
+}
 
 void binary_blink(uint8_t bits, int32_t value, int caps_fd)
 {
@@ -64,14 +72,12 @@ void solid_blink(uint8_t value, int caps_fd)
     write(caps_fd, &bit1, sizeof(bit1));
 }
 
-void msg_blink(const char msg[restrict 1], size_t len, size_t nbmsg, bool morse, int caps_fd)
+void msg_blink(const char msg[static 1], size_t len, size_t nbmsg, bool morse, int caps_fd)
 {
-    (void)morse;
     size_t msg_idx = (size_t)rand() % nbmsg;
-
-    // We stop and pick to_print at the msg_idx'th message
     const char *to_print = &msg[0];
-    for (size_t i = 0; i < len && msg_idx > 0; ++i)
+    // We stop and pick to_print at the msg_idx'th message
+    for (size_t i = 0; msg_idx > 0 && i < len; ++i)
     {
         if (msg[i] == '\0')
         {
@@ -87,19 +93,13 @@ void msg_blink(const char msg[restrict 1], size_t len, size_t nbmsg, bool morse,
     {
         if (morse)
         {
-            char tmp = to_print[i];
-            if (tmp == ' ')
+            if (to_print[i] == ' ')
             {
                 usleep(interblink * 5 * 1000);
                 continue;
             }
-            uint8_t c = (tmp >= 'a' && tmp <= 'z')   ? atomorse[tmp - 'a']
-                        : (tmp >= 'A' && tmp <= 'Z') ? atomorse[tmp - 'A']
-                        : (tmp >= '0' && tmp <= '9') ? atomorse[tmp - '0' + ('z' - 'a' + 1)]
-                                                     : '\0';
-
             // Now, we just print the binary representation of the character
-            binary_blink(c, 3, caps_fd);
+            binary_blink(atomorse(to_print[i]), 3, caps_fd);
         }
         else
         {
