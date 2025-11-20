@@ -151,8 +151,13 @@ int main(int argc, char *argv[])
 
     // Will be closed in the exit function.
     caps_fd = open(led_path, O_WRONLY);
-    input_fd = open(input_path, O_RDONLY);
-    if (caps_fd < 0 || input_fd < 0)
+    bool need_input = blink_mode == BINARY || blink_mode == SOLID;
+    if (need_input)
+    {
+        input_fd = open(input_path, O_RDONLY);
+    }
+
+    if (caps_fd < 0 || (input_fd < 0 && need_input))
     {
         errx(EXIT_FAILURE, "Failed to open files: caps = %d & input = %d", caps_fd, input_fd);
     }
@@ -160,7 +165,7 @@ int main(int argc, char *argv[])
     while (true)
     {
         struct input_event ev;
-        if (read(input_fd, &ev, sizeof(struct input_event)) != sizeof(struct input_event))
+        if (need_input && read(input_fd, &ev, sizeof(struct input_event)) != sizeof(struct input_event))
         {
             // This program is meant to be ran as a daemon and its resource usage is near-nil,
             // so this is the least annoying option in case input exceptionally cannot be read
