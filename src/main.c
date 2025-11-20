@@ -24,10 +24,10 @@ uint32_t interblink = 200;
 uint32_t intermsg = 6000;
 uint32_t longpress_speedup = 2;
 
-/* Our `fd`s are gobal because there is no reasonable way to close them otherwise, as the program
+/* Our `fd`s are global because there is no reasonable way to close them otherwise, as the program
  only exits on error or when receiving a signal.
 
- Even though signals involve some form of concurency, marking these as atomic just doesn't make
+ Even though signals involve some form of concurrency, marking these as atomic just doesn't make
  sense and isn't easily done. */
 static int caps_fd = -1;
 static int input_fd = -1;
